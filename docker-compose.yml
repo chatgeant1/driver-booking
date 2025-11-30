@@ -1,0 +1,53 @@
+services:
+  api-gateway:
+    build: ./0-api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - driver-service
+      - ride-service
+      - payment-service	
+    networks:
+      - microservices-network
+
+  user-service:
+    build: ./1-user-service
+    ports:
+      - "3001:3001"
+    networks:
+      - microservices-network
+    env_file:
+      - ./1-user-service/.env
+
+
+  driver-service:
+    build: ./2-driver-service
+    ports:
+      - "3002:3002"
+    networks:
+      - microservices-network
+    env_file:
+      - ./2-driver-service/.env
+
+  ride-service:
+    build: ./3-ride-service
+    ports:
+      - "3003:3003"
+    networks:
+      - microservices-network
+    env_file:
+      - ./3-ride-service/.env
+
+  payment-service:
+    build: ./4-payment-service
+    ports:
+      - "3004:3004"
+    networks:
+      - microservices-network
+    env_file:
+      - ./4-payment-service/.env
+
+networks:
+  microservices-network:
+    driver: bridge

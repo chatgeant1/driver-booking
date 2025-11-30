@@ -1,0 +1,238 @@
+import React, { useEffect, useState } from 'react'
+import UserForm from './components/UserForm'
+import DriverForm from './components/DriverForm'
+import RideBooking from './components/RideBooking'
+import RideDetail from './components/RideDetail'
+import RideCancel from './components/RideCancel'
+import RideStatusUpdate from './components/RideStatusUpdate'
+import FareCalculator from './components/FareCalculator'
+import PaymentForm from './components/PaymentForm'
+import PaymentHistory from './components/PaymentHistory'
+import PaymentMethodForm from './components/PaymentMethodForm'
+import MapSimulator from './components/MapSimulator'
+import './styles.css'
+
+const USER_URL = import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:3001'
+const DRIVER_URL = import.meta.env.VITE_DRIVER_SERVICE_URL || 'http://localhost:3002'
+
+export default function App() {
+  const [users, setUsers] = useState([])
+  const [drivers, setDrivers] = useState([])
+  const [msg, setMsg] = useState('')
+  const [editingUser, setEditingUser] = useState(null)
+  const [editingDriver, setEditingDriver] = useState(null)
+  const [selectedRideId, setSelectedRideId] = useState(null)
+  const [rideHistory, setRideHistory] = useState([])
+  const currentUserId = 'user-demo-123' // adjust as needed
+
+  useEffect(() => {
+    fetchUsers()
+    fetchDrivers()
+  }, [])
+
+  async function fetchUsers() {
+    try {
+      const r = await fetch(`${USER_URL}/users`)
+      const j = await r.json()
+      setUsers(j || [])
+      setMsg('Users loaded')
+    } catch (e) {
+      setMsg('Error loading users: ' + e.message)
+    }
+  }
+
+  async function fetchDrivers() {
+    try {
+      const r = await fetch(`${DRIVER_URL}/drivers`)
+      const j = await r.json()
+      setDrivers(j || [])
+      setMsg('Drivers loaded')
+    } catch (e) {
+      setMsg('Error loading drivers: ' + e.message)
+    }
+  }
+
+  // Users CRUD
+  async function createUser(data) {
+    try {
+      const r = await fetch(`${USER_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      const j = await r.json()
+      setUsers(prev => [j, ...prev])
+      setMsg('User created')
+    } catch (e) { setMsg('Create user error: ' + e.message) }
+  }
+
+  async function updateUser(id, data) {
+    try {
+      const r = await fetch(`${USER_URL}/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      const j = await r.json()
+      setUsers(prev => prev.map(u => u._id === id ? j : u))
+      setEditingUser(null)
+      setMsg('User updated')
+    } catch (e) { setMsg('Update user error: ' + e.message) }
+  }
+
+  async function deleteUser(id) {
+    if (!confirm('Xác nhận xóa user?')) return
+    try {
+      await fetch(`${USER_URL}/users/${id}`, { method: 'DELETE' })
+      setUsers(prev => prev.filter(u => u._id !== id))
+      setMsg('User deleted')
+    } catch (e) { setMsg('Delete user error: ' + e.message) }
+  }
+
+  // Drivers CRUD
+  async function createDriver(data) {
+    try {
+      const r = await fetch(`${DRIVER_URL}/drivers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      const j = await r.json()
+      setDrivers(prev => [j, ...prev])
+      setMsg('Driver created')
+    } catch (e) { setMsg('Create driver error: ' + e.message) }
+  }
+
+  async function updateDriver(id, data) {
+    try {
+      const r = await fetch(`${DRIVER_URL}/drivers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      const j = await r.json()
+      setDrivers(prev => prev.map(d => d._id === id ? j : d))
+      setEditingDriver(null)
+      setMsg('Driver updated')
+    } catch (e) { setMsg('Update driver error: ' + e.message) }
+  }
+
+  async function deleteDriver(id) {
+    if (!confirm('Xác nhận xóa driver?')) return
+    try {
+      await fetch(`${DRIVER_URL}/drivers/${id}`, { method: 'DELETE' })
+      setDrivers(prev => prev.filter(d => d._id !== id))
+      setMsg('Driver deleted')
+    } catch (e) { setMsg('Delete driver error: ' + e.message) }
+  }
+
+  return (
+    <div className="container">
+      <h1>Driver Booking — Full Platform</h1>
+
+      <section>
+        <h2>💰 Tính Phí & Đặt Xe</h2>
+        <FareCalculator />
+        <RideBooking userId={currentUserId} onRideCreated={(ride) => {
+          setRideHistory(prev => [ride, ...prev])
+          setSelectedRideId(ride.ride_id)
+        }} />
+      </section>
+
+      <hr />
+
+      {selectedRideId && (
+        <section>
+          <RideDetail rideId={selectedRideId} onBack={() => setSelectedRideId(null)} />
+          <RideCancel rideId={selectedRideId} userId={currentUserId} onCancel={() => setSelectedRideId(null)} />
+          <RideStatusUpdate rideId={selectedRideId} />
+        </section>
+      )}
+
+      <hr />
+
+      <section>
+        <h2>📋 Lịch Sử Chuyến Đi</h2>
+        {rideHistory.length === 0 ? <p>No rides</p> : (
+          <ul>
+            {rideHistory.map(ride => (
+              <li key={ride.ride_id} style={{ marginBottom: 8, cursor: 'pointer', padding: 8, background: '#f5f5f5' }} onClick={() => setSelectedRideId(ride.ride_id)}>
+                <strong>#{ride.ride_id}</strong> - {ride.status} - ${ride.estimated_fare}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <hr />
+
+      <section>
+        <h2>Users</h2>
+        <UserForm
+          key={editingUser ? editingUser._id : 'new-user'}
+          initialData={editingUser}
+          onCancel={() => setEditingUser(null)}
+          onSubmit={(data) => editingUser ? updateUser(editingUser._id, data) : createUser(data)}
+        />
+        <div>
+          {users.length === 0 ? <p>No users</p> : (
+            <ul>
+              {users.map(u => (
+                <li key={u._id} style={{marginBottom:10}}>
+                  <strong>{u.name}</strong> — {u.phone} — rating: {u.rating}
+                  <div>
+                    <button onClick={() => setEditingUser(u)}>Sửa</button>
+                    <button onClick={() => deleteUser(u._id)}>Xóa</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <hr />
+
+      <section>
+        <h2>Drivers</h2>
+        <DriverForm
+          key={editingDriver ? editingDriver._id : 'new-driver'}
+          initialData={editingDriver}
+          onCancel={() => setEditingDriver(null)}
+          onSubmit={(data) => editingDriver ? updateDriver(editingDriver._id, data) : createDriver(data)}
+        />
+        <div>
+          {drivers.length === 0 ? <p>No drivers</p> : (
+            <ul>
+              {drivers.map(d => (
+                <li key={d._id} style={{marginBottom:10}}>
+                  <strong>{d.name}</strong> — {d.vehicleType} ({d.vehiclePlate}) — {d.status}
+                  <div>
+                    <button onClick={() => setEditingDriver(d)}>Sửa</button>
+                    <button onClick={() => deleteDriver(d._id)}>Xóa</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <hr />
+
+      <section>
+        <h2>💳 Payments</h2>
+        <PaymentMethodForm userId={currentUserId} onAdded={() => { /* optionally refresh methods */ }} />
+        <PaymentForm userId={currentUserId} onResult={(tx) => { /* optionally add to history */ }} />
+        <PaymentHistory userId={currentUserId} />
+      </section>
+
+      <hr />
+
+      <section>
+        <h2>🗺️ Map Simulator (Fake)</h2>
+        <MapSimulator />
+      </section>
+    </div>
+  )
+}
