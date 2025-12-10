@@ -111,7 +111,7 @@ export const create = async (req, res) => {
 
     // tạo document Ride mới trong DB sử dụng RIDE
     console.log('2. Creating new RIDE document in DB.')
-    const newRide = await RideModel.create(RIDE)
+    const newRide = await Ride.create(RIDE)
     
     // lấy giá trị rideId mới tạo ra
     const rideId = newRide._id
