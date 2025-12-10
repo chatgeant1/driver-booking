@@ -17,16 +17,6 @@ router.post("/", ctl.create)
 router.put("/:id", ctl.update)
 router.delete("/:id", ctl.remove)
 
-
-
-
-
-
-
-
-
-
-
 export default router
 
 

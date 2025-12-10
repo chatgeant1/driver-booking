@@ -2,8 +2,8 @@ import axios from 'axios'
 
 // script Driver (ko) nhận yêu cầu đặt xe
 // Tạo string mẫu driverId (assigned), rideId (Theo DB)
-const driverId = "69393ce8426587232df51909"
-const rideId = "69395b6b714c2e5123acb0db"
+const driverId = "69393cfb426587232df5190b"
+const rideId = "693995ca88064b8da0339de1"
 
 async function assigned_driver_response(number) { 
     const str = number == 1 ? "accept" : (number == 0 ? "reject" : "undefined")
