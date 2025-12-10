@@ -94,7 +94,7 @@ export const create = async (req, res) => {
     try {
         const driverRes = await axios.get(`http://driver-service:3002/drivers/nearby-driver-list?x=${startLoc.x}&y=${startLoc.y}`); 
         const {nearby_drivers} = driverRes.data
-        RIDE.nearby_drivers = nearby_drivers // Cập nhật tên trường
+        RIDE.candidate_drivers = nearby_drivers // Cập nhật tên trường
 
         if (!nearby_drivers || nearby_drivers.length === 0) {
             console.warn('WARNING: No nearby drivers found.'); // LOG CẢNH BÁO
