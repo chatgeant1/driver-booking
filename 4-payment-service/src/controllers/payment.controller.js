@@ -7,17 +7,24 @@ export const getAll = async (req, res) => {
 };
 
 
-
 // 5.1 POST /payments with {rideId}
-
 export const create = async (req, res) => {
+    console.log('--- START PAYMENT PROCESSING FLOW ---')
+
     const { rideId } = req.body
+    console.log(`Received Payment Request for Ride ID: ${rideId}`)
+
     // - ride = Gọi api Ride: GET /rides/${req.body}
+    console.log(`1. Calling RIDE Service to fetch ride details: GET /rides/${rideId}`)
+
     const rideRes = await axios.get(`http://localhost:3000/rides/${rideId}`)
     const ride = rideRes.data  
 
+    console.log(`Ride details fetched. User: ${ride.userId}, Status: ${ride.status}, Amount: ${ride.price}, Driver: ${ride.driverId}`)
+
     // - verify ride.status == "COMPLETED"
     if (ride.status !== "COMPLETED") {
+        console.warn(`Validation Failed: Ride status is ${ride.status}, expected COMPLETED.`); // LOG VALIDATION
         return res.status(400).json({ message: "Ride not completed" })
     }
     
@@ -31,21 +38,26 @@ export const create = async (req, res) => {
     }
 
     // - Thêm vào DB
+    console.log('2. Creating PAYMENT document in DB with status PAID.')
     const savedPayment = await Payment.create(payment)
+    console.log(`Payment document created. Payment ID: ${savedPayment._id}`)
 
     // - Gọi api Driver: PUT /drivers/${ride.driverId} với {status: "AVAILABLE", current_ride_id: null}
-    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, {
+    const driverUpdatePayload = {
         status: "AVAILABLE",
         current_ride_id: null
-    })
-    
+    }
+
+    console.log(`3. Calling DRIVER Service to reset driver ${ride.driverId} status to AVAILABLE.`)
+    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, driverUpdatePayload)
+    console.log('Driver status reset successful (AVAILABLE).')
+
+    console.log('--- END PAYMENT PROCESSING FLOW SUCCESS ---')
     return res.status(201).json({
             message: "Payment created successfully",
             payment: savedPayment
     })
 };
-
-
 
 
 

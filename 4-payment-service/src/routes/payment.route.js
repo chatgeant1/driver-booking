@@ -10,7 +10,7 @@ router.post("/", ctl.create)
 router.put("/:id", ctl.update)
 router.delete("/:id", ctl.remove)
 
-// // Payments by user (history)
+// Payments by user (history)
 // router.get('/payments/user/:userId', controller.getPaymentsByUser);
 
 

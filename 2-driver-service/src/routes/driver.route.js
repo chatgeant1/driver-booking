@@ -7,22 +7,17 @@ const router = Router()
 router.get("/", ctl.getAll)
 router.get("/health", ctl.health)
 
-//GET /drivers/nearby-driver-list?lat=21.05&lon=105.82
+//GET /drivers/nearby-driver-list?user_x=21.05&user_y=105.82
 router.get("/nearby-driver-list", ctl.get_nearby_list);
 
 router.get("/:id", ctl.getOne)
 
 
 router.post("/", ctl.create)
-router.post("/:id/request", ctl.ride_request)
 router.put("/:id", ctl.update)
 router.delete("/:id", ctl.remove)
 
 
-router.patch("/:id/location", ctl.update_location);
-router.patch("/:id/status", ctl.update_status);
-router.patch("/:id/ride-id", ctl.update_ride_id);
-router.post("/:id/request", ctl.ride_request)
 
 
 

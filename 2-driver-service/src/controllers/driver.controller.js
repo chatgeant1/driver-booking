@@ -14,6 +14,7 @@ export const create = async (req, res) => {
 
 // Không kiểm soát logic trạng thái (1->3->2)
 // Nếu id không tồn tại → driver = null
+// 1.2 script 1
 export const update = async (req, res) => {
   // Xử lý: không cho update BẤT KỲ field nào nếu client gửi lên
   const allowed = ['status', 'current_ride_id', 'location']
@@ -50,43 +51,9 @@ export const remove = async (req, res) => {
 }
 
 //==================//==================//==================//==================//==================
-// UPDATE DRIVER LOCATION(x,y)
-export const update_location = async (req, res) => {
-  const driverId = req.params.id;
-  const { lat, lon } = req.body;
-
-  if (lat == null || lon == null) {
-    return res.status(400).json({ error: "Missing lat or lon" });
-  }
-
-  const oldData = await Driver.findById(driverId);
-
-  const newData = await Driver.findByIdAndUpdate(
-    driverId,
-    {
-      $set: {
-        "location.lat": lat,
-        "location.lon": lon
-      }
-    },
-    { new: true }  // return data mới
-  );
-
-  return res.json({
-    status: "SUCCESS",
-    old_lat: oldData.location.lat,
-    old_lon: oldData.location.lon,
-    new_lat: newData.location.lat,
-    new_lon: newData.location.lon
-  });
-};
 
 //==================//==================//==================//==================//==================
-
-
-
-
-
+// 1.3 script 1
 // NEARBY DRIVER LIST
 export const get_nearby_list = async (req, res) => {
   const user_x = Number(req.query.x);
@@ -129,88 +96,6 @@ export const get_nearby_list = async (req, res) => {
 
 
 
-
-
-
-
-
-
-
 //==================//==================//==================//==================//==================
-export const update_status = async (req, res) => {
-    const driverId = req.params.id;
-    const { status } = req.body;
-
-  // invalid status string...
-    const valid = ['available','busy','offline','assigned','coming','in_ride','completed'];
-
-    if (!valid.includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
-    }
-
-    await Driver.findByIdAndUpdate(
-        driverId,
-        {   
-            $set: {
-                "status": status,
-            }
-        },
-        { new: true }  // return data mới
-    );
-
-  return res.json({ status: "SUCCESS"  });
-};
 //==================//==================//==================//==================//==================
-export const ride_request = async (req, res) => {
-  try {
-    const driverId = req.params.id;
-    const { rideId } = req.body;
-
-    // Kiểm tra input
-    if (!rideId) {
-      return res.status(400).json({ error: "Missing rideId" });
-    }
-
-    // Tìm driver theo id
-    const driver = await Driver.findById(driverId);
-    if (!driver) {
-      return res.status(404).json({ error: "Driver not found" });
-    }
-
-    // Chỉ nhận request nếu driver đang available
-    if (driver.status !== "available" || driver.current_ride_id != null) {
-      return res.status(400).json({ error: "Driver not available" });
-    }
-
-    // Cập nhật driver: status + current_ride_id
-    driver.status = "assigned";
-    driver.current_ride_id = rideId;
-
-    await driver.save();
-
-    // Trả kết quả
-    return res.json({ result: "REQUEST_SENT" });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
-
 //==================//==================//==================//==================//==================
-export const update_ride_id = async (req, res) => {
-    const driverId = req.params.id;
-    const { current_ride_id } = req.body;
-
-    await Driver.findByIdAndUpdate(
-        driverId,
-        {   
-            $set: {
-                "current_ride_id": current_ride_id,
-            }
-        },
-        { new: true }  // return data mới
-    );
-
-  return res.json({ status: "SUCCESS"  });
-};
