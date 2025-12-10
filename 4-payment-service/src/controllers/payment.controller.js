@@ -30,7 +30,7 @@ export const create = async (req, res) => {
     
     // - tạo object PAYMENT 
     const payment = {
-            rideId: ride.id,
+            rideId: ride._id,
             userId: ride.userId,
             driverId: ride.driverId,
             amount: ride.price,

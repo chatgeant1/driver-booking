@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // script Driver đến nơi đón khách và ấn [bắt đầu] đi
 // Tạo string mẫu rideId (Lấy từ DB)
-const rideId = ""
+const rideId = "69395b6b714c2e5123acb0db"
 
 // Driver nào gọi không được verify, bất kỳ driver nào cũng gọi được
 

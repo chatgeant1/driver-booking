@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // script Driver ấn nút hoàn thành 
 // Tạo string mẫu rideId (Lấy từ DB)
-const rideId = ""
+const rideId = "69395b6b714c2e5123acb0db"
 
 async function ride_finish() { 
     console.log('Sending PUT request to RIDE Service to finish ride') 

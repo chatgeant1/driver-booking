@@ -33,7 +33,7 @@ export default router
 
 // // Cập nhật vị trí (Real-time)
 // // input: Latitude, Longitude, Timestamp.
-// // output: driver_id, status: [success, failed]
+// // output: driverId, status: [success, failed]
 // app.put('/drivers/:id/location', ()=>{})
 
 // // Tìm Tài xế (Gọi từ Ride Service).
@@ -43,5 +43,5 @@ export default router
 
 // // Gửi yêu cầu chuyến đi (Gọi từ Ride Service)
 // // ride_id, Vị trí đón (pickup_loc), Vị trí đến (dest_loc)
-// // driver_id, request_status: pending
+// // driverId, request_status: pending
 // app.post('/drivers/:id/request', () => {})

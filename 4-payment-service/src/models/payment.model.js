@@ -6,7 +6,7 @@ const paymentSchema = new mongoose.Schema({
   driverId: { type: mongoose.Schema.Types.ObjectId, required: true },
   amount: Number,
   method: { type: String, enum:['cash','wallet'], default:'cash' },
-  status: { type: String, enum:['pending','paid','failed'], default:'pending' }
+  status: { type: String, enum:['PENDING','PAID','FAILED'], default:'PENDING' }
 }, { timestamps: true });
 
 const Payment = mongoose.model('Payment', paymentSchema, "payments_collection");

@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // script User ấn nút [thanh toán] 
 // Tạo string mẫu rideId (Lấy từ DB)
-const rideId = ""
+const rideId = "69395b6b714c2e5123acb0db"
 
 async function user_paying() { 
     const payload = {rideId}

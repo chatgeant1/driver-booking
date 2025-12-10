@@ -303,7 +303,7 @@ export const driver_reject = async (req, res) => {
 export const start = async (req, res) => {
     const rideId = req.params.id
 
-    console.log(`Request received: PUT /rides/${rideId}/start`)
+    console.log(`=====Request received: PUT /rides/${rideId}/start=====`)
 
     // - ride = Query(RIDE, (req.params.id))
     const ride = await Ride.findById(rideId)
@@ -339,11 +339,12 @@ export const start = async (req, res) => {
     await ride.save()
     console.log('Ride status updated to ON_TRIP successfully.')
 
-    console.log('Returning 200 OK for ride:', rideId)
+    console.log('=====Returning 200 OK for ride:', rideId, "=====")
         
     return res.json({
       rideId,
-      status: "ON_TRIP",
+      ride_status: "ON_TRIP",
+      driver_status: "IN_RIDE",
       driver_current_location: `(${ride.startLoc.x} ; ${ride.startLoc.y})`
     })
 }
@@ -355,9 +356,10 @@ export const start = async (req, res) => {
 export const finish = async (req, res) => {
     console.log('--- START RIDE FINISH FLOW ---')
 
+    const rideId = req.params.id
+
     console.log(`Request received: PUT /rides/${rideId}/finish`)
 
-    const rideId = req.params.id
     // - ride = Query(RIDE, (req.params.id))
     const ride = await Ride.findById(rideId)
     if (!ride) {
@@ -395,6 +397,7 @@ export const finish = async (req, res) => {
     console.log('2. RIDE DB Updated. Ride status set to COMPLETED.')
 
     console.log('Returning 200 OK for ride:', rideId)
+    console.log('--- END RIDE FINISH FLOW ---')
     return res.json({
       rideId,
       status: "COMPLETED",
