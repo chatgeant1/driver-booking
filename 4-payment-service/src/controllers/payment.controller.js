@@ -17,7 +17,7 @@ export const create = async (req, res) => {
     // - ride = Gọi api Ride: GET /rides/${req.body}
     console.log(`1. Calling RIDE Service to fetch ride details: GET /rides/${rideId}`)
 
-    const rideRes = await axios.get(`http://localhost:3000/rides/${rideId}`)
+    const rideRes = await axios.get(`http://ride-service:3003/rides/${rideId}`)
     const ride = rideRes.data  
 
     console.log(`Ride details fetched. User: ${ride.userId}, Status: ${ride.status}, Amount: ${ride.price}, Driver: ${ride.driverId}`)
@@ -49,7 +49,7 @@ export const create = async (req, res) => {
     }
 
     console.log(`3. Calling DRIVER Service to reset driver ${ride.driverId} status to AVAILABLE.`)
-    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, driverUpdatePayload)
+    await axios.put(`http://driver-service:3002/drivers/${ride.driverId}`, driverUpdatePayload)
     console.log('Driver status reset successful (AVAILABLE).')
 
     console.log('--- END PAYMENT PROCESSING FLOW SUCCESS ---')

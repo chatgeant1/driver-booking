@@ -92,7 +92,7 @@ export const create = async (req, res) => {
     console.log(`1. Calling DRIVER Service: GET /nearby-driver-list?x=${startLoc.x}&y=${startLoc.y}`); 
     
     try {
-        const driverRes = await axios.get(`http://localhost:3000/drivers/nearby-driver-list?x=${startLoc.x}&y=${startLoc.y}`); 
+        const driverRes = await axios.get(`http://driver-service:3002/drivers/nearby-driver-list?x=${startLoc.x}&y=${startLoc.y}`); 
         const {nearby_drivers} = driverRes.data
         RIDE.nearby_drivers = nearby_drivers // Cập nhật tên trường
 
@@ -107,6 +107,7 @@ export const create = async (req, res) => {
         return res.status(503).json({ error: "Service temporarily unavailable or no drivers found." });
     }    
     
+   
 
     // tạo document Ride mới trong DB sử dụng RIDE
     console.log('2. Creating new RIDE document in DB.')
@@ -135,7 +136,7 @@ export const create = async (req, res) => {
 
     console.log(`3. Calling DRIVER Service to assign driver ${assignedDriver.driverId}. Payload:`, driver_payload)
 
-    const driver_res = await axios.put(`http://localhost:3000/drivers/${nearby_drivers[0].driver_id}`, driver_payload); 
+    const driver_res = await axios.put(`http://driver-service:3002/drivers/${nearby_drivers[0].driver_id}`, driver_payload); 
     console.log('Driver Service response status:', driver_res.status)
 
     console.log('--- END RIDE REQUEST SUCCESS ---')
@@ -189,7 +190,7 @@ export const driver_accept = async (req, res) => {
     }
     console.log(`1. Calling DRIVER Service to update status. Payload:`, driverUpdatePayload)
 
-    await axios.put(`http://localhost:3000/drivers/${driverId}`, driverUpdatePayload)
+    await axios.put(`http://driver-service:3002/drivers/${driverId}`, driverUpdatePayload)
 
     console.log('Driver Service update successful. Updating RIDE status...')
 
@@ -200,7 +201,7 @@ export const driver_accept = async (req, res) => {
 
     console.log(`2. RIDE DB Updated. Ride ID: ${rideId}, New Status: ${ride.status}`)
 
-    const driver = await axios.get(`http://localhost:3000/drivers/${driverId}`)
+    const driver = await axios.get(`http://driver-service:3002/drivers/${driverId}`)
     const driverLocation = driver.data.location;
 
     console.log('--- END DRIVER ACCEPTANCE FLOW SUCCESS ---')
@@ -251,7 +252,7 @@ export const driver_reject = async (req, res) => {
     const resetDriverPayload = { status: "AVAILABLE", current_ride_id: null }
     
     console.log(`1. Calling DRIVER Service to RESET rejected driver ${driverId} status to AVAILABLE.`)
-    await axios.put(`http://localhost:3000/drivers/${driverId}`, resetDriverPayload)
+    await axios.put(`http://driver-service:3002/drivers/${driverId}`, resetDriverPayload)
     console.log('Rejected Driver status reset successfully.')
 
     // - ride.candidate_drivers.filter 
@@ -283,7 +284,7 @@ export const driver_reject = async (req, res) => {
     }
 
     console.log(`4. Assigning next driver ${nextDriver.toString()} to ride ${rideId}.`)
-    await axios.put(`http://localhost:3000/drivers/${nextDriver}`, assignNextDriverPayload)
+    await axios.put(`http://driver-service:3002/drivers/${nextDriver}`, assignNextDriverPayload)
     console.log('Next driver status updated to ASSIGNED successfully.')
 
     await ride.save()
@@ -323,7 +324,7 @@ export const start = async (req, res) => {
 
     // - Gọi api Driver: PUT /drivers/${ride.driverId} với {status: "IN_RIDE", location: ride.startLoc} - 
     // tại đó cập nhật driver.status = "IN_RIDE", driver.location = location (vị trí tài xế = nơi đón khách), update DB
-    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, {
+    await axios.put(`http://driver-service:3002/drivers/${ride.driverId}`, {
       status: "IN_RIDE",
       location: {
         x: ride.startLoc.x,
@@ -385,7 +386,7 @@ export const finish = async (req, res) => {
     }    
     
     console.log(`1. Calling DRIVER Service to update status to WAITING_FOR_PAYMENT.`)
-    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, driverUpdatePayload)
+    await axios.put(`http://driver-service:3002/drivers/${ride.driverId}`, driverUpdatePayload)
     console.log('Driver status updated successfully.')
     
     // - ride.status = "COMPLETED", update DB

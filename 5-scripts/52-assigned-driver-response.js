@@ -1,4 +1,4 @@
-// import {axios} from 'axios'
+import axios from 'axios'
 
 // script Driver (ko) nhận yêu cầu đặt xe
 // Tạo string mẫu driverId (assigned), rideId (Theo DB)

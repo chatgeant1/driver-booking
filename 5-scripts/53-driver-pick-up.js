@@ -1,4 +1,4 @@
-// import {axios} from 'axios'
+import axios from 'axios'
 
 // script Driver đến nơi đón khách và ấn [bắt đầu] đi
 // Tạo string mẫu rideId (Lấy từ DB)

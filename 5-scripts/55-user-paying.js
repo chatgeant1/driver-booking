@@ -1,4 +1,4 @@
-// import {axios} from 'axios'
+import axios from 'axios'
 
 // script User ấn nút [thanh toán] 
 // Tạo string mẫu rideId (Lấy từ DB)
