@@ -2,8 +2,8 @@ import axios from 'axios'
 
 // script Driver (ko) nhận yêu cầu đặt xe
 // Tạo string mẫu driverId (assigned), rideId (Theo DB)
-const driverId = ""
-const rideId = ""
+const driverId = "69393ce8426587232df51909"
+const rideId = "69395b6b714c2e5123acb0db"
 
 async function assigned_driver_response(number) { 
     const str = number == 1 ? "accept" : (number == 0 ? "reject" : "undefined")
@@ -19,4 +19,4 @@ async function assigned_driver_response(number) {
 
 // Chạy script và console.log kết quả
 const result = await assigned_driver_response(1);
-console.log(`Driver ${str} the Ride`, result);
+console.log(`Driver responsed the Ride`, result);
