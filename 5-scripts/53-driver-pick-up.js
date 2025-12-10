@@ -11,13 +11,13 @@ async function driver_pick_up() {
     
     const response = await axios.put(`http://localhost:3000/rides/${rideId}/start`); 
     
-    console.log('RIDE Service response:', response.status, response.data)
+    console.log('RIDE Service response:', response.status)
     
     return response.data;
 }
 
 // Chạy script và console.log kết quả
 const result = await driver_pick_up();
-console.log(result);
+console.log('Driver arrived and start the Ride: ', result);
 
 

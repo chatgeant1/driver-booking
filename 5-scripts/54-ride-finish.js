@@ -5,13 +5,18 @@
 const rideId = ""
 
 async function ride_finish() { 
+    console.log('Sending PUT request to RIDE Service to finish ride') 
     const response = await axios.put(`http://localhost:3000/rides/${rideId}/finish`); 
+    console.log('RIDE Service response:', response.status)
     return response.data;
 }
 
 // Chạy script và console.log kết quả
 const result = await ride_finish();
-console.log(result);
+console.log('Ride Finished: ', result);
 
 
 
+    
+    
+    

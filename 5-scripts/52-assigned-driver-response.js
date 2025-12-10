@@ -10,11 +10,13 @@ async function assigned_driver_response(number) {
 
     const payload = {driverId}
     
+    console.log('Sending POST request to RIDE Service as driver response') 
     const response = await axios.post(`http://localhost:3000/rides/${rideId}/${str}`, payload); 
-    
+    console.log('RIDE Service response:', response.status)
+
     return response.data;
 }
 
 // Chạy script và console.log kết quả
 const result = await assigned_driver_response(1);
-console.log(result);
+console.log(`Driver ${str} the Ride`, result);
