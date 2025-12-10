@@ -1,15 +1,53 @@
 import Payment from '../models/payment.model.js'
+import axios from "axios"
 
 export const getAll = async (req, res) => {
     const payments = await Payment.find();
     res.json(payments);
 };
 
+
+
+// 5.1 POST /payments with {rideId}
+
 export const create = async (req, res) => {
-    const newPayment = new Payment(req.body);
-    await newPayment.save();
-    res.json(newPayment);
+    const { rideId } = req.body
+    // - ride = Gọi api Ride: GET /rides/${req.body}
+    const rideRes = await axios.get(`http://localhost:3000/rides/${rideId}`)
+    const ride = rideRes.data  
+
+    // - verify ride.status == "COMPLETED"
+    if (ride.status !== "COMPLETED") {
+        return res.status(400).json({ message: "Ride not completed" })
+    }
+    
+    // - tạo object PAYMENT 
+    const payment = {
+            rideId: ride.id,
+            userId: ride.userId,
+            driverId: ride.driverId,
+            amount: ride.price,
+            status: "PAID"
+    }
+
+    // - Thêm vào DB
+    const savedPayment = await Payment.create(payment)
+
+    // - Gọi api Driver: PUT /drivers/${ride.driverId} với {status: "AVAILABLE", current_ride_id: null}
+    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, {
+        status: "AVAILABLE",
+        current_ride_id: null
+    })
+    
+    return res.status(201).json({
+            message: "Payment created successfully",
+            payment: savedPayment
+    })
 };
+
+
+
+
 
 export const update = async (req, res) => {
     const payment = await Payment.findByIdAndUpdate(

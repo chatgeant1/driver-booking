@@ -30,7 +30,7 @@ Object.keys(services).forEach(path => {
 
 app.use(express.json());
 
-// Default route
+// Default route: http://localhost:3000/
 app.get('/', (req, res) => {
     res.json({
         message: 'API Gateway',

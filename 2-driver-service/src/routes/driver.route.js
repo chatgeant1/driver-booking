@@ -7,7 +7,7 @@ const router = Router()
 router.get("/", ctl.getAll)
 router.get("/health", ctl.health)
 
-//GET /driver/nearby-driver-list?lat=21.05&lon=105.82
+//GET /drivers/nearby-driver-list?lat=21.05&lon=105.82
 router.get("/nearby-driver-list", ctl.get_nearby_list);
 
 router.get("/:id", ctl.getOne)

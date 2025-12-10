@@ -1,14 +1,9 @@
 import Ride from '../models/ride.model.js'
+import axios from "axios"
 
 export const getAll = async (req, res) => {
     const rides = await Ride.find();
     res.json(rides);
-};
-
-export const create = async (req, res) => {
-    const newRide = new Ride(req.body);
-    await newRide.save();
-    res.json(newRide);
 };
 
 export const update = async (req, res) => {
@@ -120,34 +115,250 @@ export const assignDriver = async (req, res, next) => {
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
+// chưa sửa nearby api, PUT /:driverId (2)
+export const create = async (req, res) => {
+    // tạo Ride mẫu ban đầu:
+    const {userId, startLoc, endLoc} = req.body
+    
+    const dx = endLoc.x - startLoc.x
+    const dy = endLoc.y - startLoc.y
+    // khoảng cách Euclid trong mặt phẳng 2D
+    const distance = Math.sqrt(dx*dx + dy*dy)
+    
+    const BASE_FARE = 10000
+    const PRICE_PER_UNIT = 4000
+    const price = BASE_FARE + distance * PRICE_PER_UNIT
+
+    const RIDE = {
+        userId,
+        startLoc,
+        endLoc,
+        price,
+        status: "REQUESTED",
+        candidate_drivers: []
+    }
+
+    // gọi api GET /drivers/nearby-list lấy danh sách drivers gần nhất. 
+    const driverRes = await axios.get(`http://localhost:3000/drivers/nearby-driver-list?x=${startLoc.x}&y=${startLoc.y}`); 
+    const {nearby_drivers} = driverRes.data
+    RIDE.candidate_drivers = nearby_drivers  
+
+    // tạo document Ride mới trong DB sử dụng RIDE
+    const newRide = await RideModel.create(RIDE)
+    
+    // lấy giá trị rideId mới tạo ra
+    const rideId = newRide._id
+
+    // lấy nearby_drivers[0].driver_id ra để gọi api DRIVER: PUT /:id với {status: "assigned"; rideId}  
+    const driver_payload = {
+        status: "ASSIGNED",
+        current_ride_id: rideId
+    }
+
+    // Chưa check empty array.
+    const driver_res = await axios.put(`http://localhost:3000/drivers/${nearby_drivers[0].driver_id}`, driver_payload); 
+
+    return res.json({
+        rideId,
+        status: "REQUESTED",
+        assignedDriverId: nearby_drivers[0].driver_id
+    })
+};
+//------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// 2.1 Ride: POST /rides/:id/accept with {driverId}
+
 export const driver_accept = async (req, res) => {
-    const {driverId} = req.body
+    
+    const rideId = req.params.id
+    const { driverId } = req.body
+    
+    const ride = await Ride.findById(rideId)
+    if (!ride) return res.status(404).json({error: "Ride not found"})
 
-    // Lấy req.params.id để lấy đối tượng ride, trong DB set status từ "requested" sang "in_progress"
+    if (!driverId) {
+      return res.status(400).json({ error: "Missing driverId" })
+    }
 
-    // gọi axios tới router.patch("/:id/status", ctl.update_status); {"status" : "..."} để thay đổi trạng thái driver từ "assigned" sang "coming"
+    // verify driverId ∈ ride.candidate_drivers && ride.status=="REQUESTED"
+    if (!ride.candidate_drivers.includes(driverId)) {
+        return res.status(400).json({ error: "Driver not in candidate list" })
+    }
 
-    res.json({
-        status: "ACCEPTED",
-        driverId
+    if (ride.status !== "REQUESTED") {
+        return res.status(400).json({ error: "Ride not in REQUESTED status" })
+    }    
+    
+    // Gọi api Driver: PUT /drivers/${req.body} với {status: "COMING"} - 
+    await axios.put(`http://localhost:3000/drivers/${driverId}`, {
+      status: "COMING",
+      current_ride_id: rideId
+    })
+
+    //ride.driverId = driverId; ride.status = "IN_PROGRESS"; update DB
+    ride.driverId = driverId
+    ride.status = "IN_PROGRESS"
+    await ride.save()
+
+    return res.json({
+      rideId,
+      driverId,
+      driver_status: "COMING",
+      ride_status: "IN_PROGRESS"
     })
 }
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//2.2 Ride: POST /rides/:id/reject with {driverId}
+
 export const driver_reject = async (req, res) => {
-    const {driverId} = req.body
+    const rideId = req.params.id
+    const { driverId } = req.body
+    
+    // --- basic validate ---
+    if (!driverId) {
+      return res.status(400).json({ error: "Missing driverId" })
+    }
 
-    // gọi axios tới router.patch("/:id/status", ctl.update_status); {"status" : "..."} để thay đổi trạng thái driver từ "assigned" sang "available"
-    // gọi axios tới router.patch("/:id/ride-id", ctl.update_ride_id); để thay đổi current_ride_id (đã gán khi request) driver sang null. 
+    // - ride = Query(RIDE, (req.params.id))
+    const ride = await Ride.findById(rideId)
+    if (!ride) {
+      return res.status(404).json({ error: "Ride not found" })
+    }
 
-    // vì có list nearby nên nếu reject thì filter driverId này để lấy hay gọi hết danh sách là đc ?
-    res.json({
-        status: "REJECTED",
-        driverId
+    // - verify ride.status=="REQUESTED"
+    if (ride.status !== "REQUESTED") {
+      return res.status(400).json({ error: "Ride is not REQUESTED" })
+    }
+
+    // - Gọi api Driver: PUT /drivers/${req.body} với {status: "AVAILABLE", current_ride_id: null} - 
+    await axios.put(`http://localhost:3000/drivers/${driverId}`, {
+      status: "AVAILABLE",
+      current_ride_id: null
+    })
+
+    // - ride.candidate_drivers.filter 
+    ride.candidate_drivers = ride.candidate_drivers.filter(
+      d => d.driverId !== driverId
+    )
+
+    // - kiểm tra ride.candidate_drivers.length > 0 ? tiếp tục : trả về {...}
+    if (ride.candidate_drivers.length === 0) {
+      ride.status = "CANCELLED"
+      await ride.save()
+
+      return res.json({
+        rideId,
+        status: "NO_DRIVER_AVAILABLE"
+      })
+    }
+
+    // - lấy drivers[0].id ra để gọi api DRIVER: PUT /:id với {status:"ASSIGNED"; rideId} - 
+    // - assign driver tiếp theo
+    const nextDriver = ride.candidate_drivers[0].driverId
+    await axios.put(`http://localhost:3000/drivers/${nextDriver}`, {
+      status: "ASSIGNED",
+      current_ride_id: rideId
+    })
+
+    await ride.save()
+
+    return res.json({
+      rideId,
+      assignedDriver: nextDriver,
+      status: "WAITING_FOR_DRIVER_RESPONSE"
     })
 }
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------
+// 3.1 PUT /rides/:id/start
+
+export const start = async (req, res) => {
+    const rideId = req.params.id
+
+    console.log(`Request received: PUT /rides/${rideId}/start`)
+
+    // - ride = Query(RIDE, (req.params.id))
+    const ride = await Ride.findById(rideId)
+    if (!ride) {
+      return res.status(404).json({ error: "Ride not found" })
+    }
+    
+    console.log('Fetched ride status:', ride.status, 'Driver ID:', ride.driverId)
+
+    // - verify ride.status=="IN_PROGRESS" 
+    if (ride.status !== "IN_PROGRESS") {
+      return res.status(400).json({ error: "Ride not ready to start" })
+    }    
+    
+    console.log('Ride status verified. Calling Driver Service...')
+
+    console.log('Calling DRIVER Service to update status to "IN_RIDE":', ride.driverId)
+
+    // - Gọi api Driver: PUT /drivers/${ride.driverId} với {status: "IN_RIDE", location: ride.startLoc} - 
+    // tại đó cập nhật driver.status = "IN_RIDE", driver.location = location (vị trí tài xế = nơi đón khách), update DB
+    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, {
+      status: "IN_RIDE",
+      location: {
+        x: ride.startLoc.x,
+        y: ride.startLoc.y
+      }
+    })    
+    
+    console.log('Driver status updated successfully.')
+
+    // - ride.status = "ON_TRIP", updateDB.
+    ride.status = "ON_TRIP"
+    await ride.save()
+    console.log('Ride status updated to ON_TRIP successfully.')
+
+    console.log('Returning 200 OK for ride:', rideId)
+        
+    return res.json({
+      rideId,
+      status: "ON_TRIP"
+    })
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// 4.1 PUT /rides/:id/finish
+
+export const finish = async (req, res) => {
+    const rideId = req.params.id
+    // - ride = Query(RIDE, (req.params.id))
+    const ride = await Ride.findById(rideId)
+    if (!ride) {
+      return res.status(404).json({ error: "Ride not found" })
+    }
+
+    // - verify ride.status == "ON_TRIP"
+    if (ride.status !== "ON_TRIP") {
+      return res.status(400).json({ error: "Ride is not on trip" })
+    }
+
+    // - Gọi api Driver: PUT /drivers/${ride.driverId} với {status: "WAITING_FOR_PAYMENT", location: ride.endLoc} - 
+    // tại đó cập nhật driver.status = "WAITING_FOR_PAYMENT", driver.location = location (vị trí tài xế = nơi trả khách), update DB
+    await axios.put(`http://localhost:3000/drivers/${ride.driverId}`, {
+      status: "WAITING_FOR_PAYMENT",
+      location: {
+        x: ride.endLoc.x,
+        y: ride.endLoc.y
+      }
+    })
+    
+    // - ride.status = "COMPLETED", update DB
+    ride.status = "COMPLETED"
+    await ride.save()
+
+    return res.json({
+      rideId,
+      status: "COMPLETED",
+      message: "Ride finished, waiting for payment"
+    })
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------------------------------------
+

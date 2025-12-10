@@ -12,6 +12,8 @@ router.delete("/:id", ctl.remove)
 
 router.post("/:id/accept", ctl.driver_accept)
 router.post("/:id/reject", ctl.driver_reject)
+router.put("/:id/start", ctl.start)
+router.put("/:id/finish", ctl.finish)
 
 // // Update status
 // router.patch('/:id/status', controller.updateRideStatus);

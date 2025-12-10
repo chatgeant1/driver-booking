@@ -13,7 +13,5 @@ router.delete("/:id", ctl.remove)
 // // Payments by user (history)
 // router.get('/payments/user/:userId', controller.getPaymentsByUser);
 
-// // Update stock
-// router.patch('/payments/:id/stock', controller.updatePaymentStock);
 
 export default router
