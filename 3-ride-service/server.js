@@ -16,7 +16,7 @@ app.post(['/rides', '/'], async (req, res) => {});
 
 
 // Hủy chuyến đi
-// user_id / driver_id
+// user_id / driverId
 // status: CANCELED
 app.put('/rides/:id/cancel', ()=>{})
 

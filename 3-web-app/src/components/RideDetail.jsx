@@ -61,7 +61,7 @@ export default function RideDetail({ rideId, onBack }) {
           </tr>
           <tr>
             <td><strong>Driver ID:</strong></td>
-            <td>{ride.driver_id || 'Searching...'}</td>
+            <td>{ride.driverId || 'Searching...'}</td>
           </tr>
           <tr>
             <td><strong>Pickup:</strong></td>

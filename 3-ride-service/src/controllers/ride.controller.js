@@ -117,7 +117,7 @@ export const create = async (req, res) => {
     const rideId = newRide._id
     console.log('New Ride Created with ID:', rideId.toString())
 
-    // lấy nearby_drivers[0].driver_id ra để gọi api DRIVER: PUT /:id với {status: "assigned"; rideId}  
+    // lấy nearby_drivers[0].driverId ra để gọi api DRIVER: PUT /:id với {status: "assigned"; rideId}  
     const assignedDriver = RIDE.candidate_drivers[0];
     // Xử lý khi không có tài xế để gán
     if (!assignedDriver) {
@@ -131,12 +131,12 @@ export const create = async (req, res) => {
 
     const driver_payload = {
         status: "ASSIGNED",
-        current_ride_id: rideId
+        current_ride_id: rideId.toString()
     }
 
     console.log(`3. Calling DRIVER Service to assign driver ${assignedDriver.driverId}. Payload:`, driver_payload)
 
-    const driver_res = await axios.put(`http://driver-service:3002/drivers/${nearby_drivers[0].driver_id}`, driver_payload); 
+    const driver_res = await axios.put(`http://driver-service:3002/drivers/${assignedDriver.driverId}`, driver_payload); 
     console.log('Driver Service response status:', driver_res.status)
 
     console.log('--- END RIDE REQUEST SUCCESS ---')
@@ -144,7 +144,7 @@ export const create = async (req, res) => {
     return res.json({
         rideId,
         status: "REQUESTED",
-        assignedDriverId: nearby_drivers[0].driver_id
+        assignedDriverId: nearby_drivers[0].driverId
     })
 };
 //------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ export const driver_accept = async (req, res) => {
     // Gọi api Driver: PUT /drivers/${req.body} với {status: "COMING"} - 
     const driverUpdatePayload = {
         status: "COMING",
-        current_ride_id: rideId
+        current_ride_id: rideId.toString()
     }
     console.log(`1. Calling DRIVER Service to update status. Payload:`, driverUpdatePayload)
 
@@ -280,7 +280,7 @@ export const driver_reject = async (req, res) => {
     const nextDriver = ride.candidate_drivers[0].driverId
     const assignNextDriverPayload = {
         status: "ASSIGNED",
-        current_ride_id: rideId
+        current_ride_id: rideId.toString()
     }
 
     console.log(`4. Assigning next driver ${nextDriver.toString()} to ride ${rideId}.`)
