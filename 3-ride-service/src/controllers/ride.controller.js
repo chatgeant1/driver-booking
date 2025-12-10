@@ -144,7 +144,7 @@ export const create = async (req, res) => {
     return res.json({
         rideId,
         status: "REQUESTED",
-        assignedDriverId: nearby_drivers[0].driverId
+        assignedDriverId: assignedDriver.driverId
     })
 };
 //------------------------------------------------------------------------------------------------------------------------------------------------------
