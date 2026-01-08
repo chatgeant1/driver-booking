@@ -2,8 +2,8 @@ import axios from 'axios'
 
 // script ride-request.js == User ấn đặt xe
 const userId = "69393bb133261c2d0231aef9"
-const start = {x: 4, y: 3}
-const end = {x: 9, y: 8}
+const start = {x: 10, y: 12}
+const end = {x: 32, y: 27}
 
 async function user_request_ride(userId, start, end) {
     const payload = {

@@ -24,8 +24,7 @@ const services = {
 // middleware: localhost:3000 use /{users}
 // == "localhost:3000/users"
 // => target: "user-service:3001/users"
-// 
-//
+// Path phía sau được giữ nguyên và forward sang target.
 Object.keys(services).forEach(path => {
     app.use(`/${path}`, createProxyMiddleware({
         target: services[path],

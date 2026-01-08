@@ -18,7 +18,4 @@ export default router
 // // => Danh sách ride_id và trạng thái cơ bản.
 // app.get('/users/:id/rides', (req, res) => {})
 
-// // Xác thực (Đăng nhập)
-// // input: Email/Số ĐT, Mật khẩu.
-// // output: Token (JWT), user_id, Hết hạn Token.
-// app.post('/users/login', () => {})
+

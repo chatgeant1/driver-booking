@@ -72,7 +72,9 @@ export const create = async (req, res) => {
     // khoảng cách Euclid trong mặt phẳng 2D
     const distance = Math.sqrt(dx*dx + dy*dy)
     
+    // BASE_FARE (Giá mở cửa): Thường là chi phí cố định cho x-km đầu tiên
     const BASE_FARE = 10000
+    // PRICE_PER_UNIT (Giá mỗi km tiếp theo)
     const PRICE_PER_UNIT = 4000
     const price = BASE_FARE + distance * PRICE_PER_UNIT
 
