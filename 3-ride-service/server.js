@@ -8,6 +8,9 @@ app.use(express.json());
 app.use('/rides', rideRoutes);
 
 
+import cors from 'cors'
+app.use(cors());
+
 // Create new ride
 // axios to others service
 // user_id, pickup_loc({lat, lng}), dropoff_loc({lat, lng}), vehicle_type.
