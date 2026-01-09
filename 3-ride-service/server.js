@@ -1,15 +1,16 @@
 import express from 'express'
 // import axios from axios
 import mongoose from 'mongoose';
+import cors from 'cors'
 import rideRoutes from './src/routes/ride.route.js'
 
 const app = express();
+app.use(cors());
+
 app.use(express.json());
 app.use('/rides', rideRoutes);
 
 
-import cors from 'cors'
-app.use(cors());
 
 // Create new ride
 // axios to others service
