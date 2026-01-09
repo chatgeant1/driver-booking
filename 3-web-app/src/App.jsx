@@ -18,11 +18,15 @@ const DRIVER_URL = import.meta.env.VITE_DRIVER_SERVICE_URL || 'http://localhost:
 export default function App() {
   const [users, setUsers] = useState([])
   const [drivers, setDrivers] = useState([])
+
   const [msg, setMsg] = useState('')
+
   const [editingUser, setEditingUser] = useState(null)
   const [editingDriver, setEditingDriver] = useState(null)
   const [selectedRideId, setSelectedRideId] = useState(null)
+
   const [rideHistory, setRideHistory] = useState([])
+  
   const currentUserId = 'user-demo-123' // adjust as needed
 
   useEffect(() => {
