@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import userRoutes from './src/routes/user.route.js'
 import cors from 'cors'
 
+
 const app = express();
 app.use(cors());
 
