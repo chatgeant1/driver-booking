@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install deps - user service
+        working-directory: 1-user-service
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+
+      - name: Install deps - driver service
+        working-directory: 2-driver-service
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+
+      - name: Install deps - web app
+        working-directory: 3-web-app
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+
+      - name: Build web app
+        working-directory: 3-web-app
+        run: |
+          if [ -f package.json ]; then npm run build --if-present; fi
+
+      - name: Build Docker image - driver service
+        uses: docker/build-push-action@v4
+        with:
+          context: ./2-driver-service
+          file: ./2-driver-service/Dockerfile
+          push: false
+          tags: ghcr.io/${{ github.repository_owner }}/driver-service:ci
