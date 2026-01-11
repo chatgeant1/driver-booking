@@ -19,6 +19,6 @@ mongoose.connect(process.env.MONGO_URI || "")
 
 
 const PORT = process.env.PORT || 3004;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Payment Service running on port ${PORT}`);
 });
