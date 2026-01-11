@@ -16,6 +16,7 @@ const USER_URL = import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:3001
 const DRIVER_URL = import.meta.env.VITE_DRIVER_SERVICE_URL || 'http://localhost:3002'
 
 export default function App() {
+  //=======1=========Các biến state
   const [users, setUsers] = useState([])
   const [drivers, setDrivers] = useState([])
 
@@ -26,9 +27,11 @@ export default function App() {
   const [selectedRideId, setSelectedRideId] = useState(null)
 
   const [rideHistory, setRideHistory] = useState([])
-  
-  const currentUserId = 'user-demo-123' // adjust as needed
 
+  const currentUserId = 'user-demo-123' // adjust as needed
+//=======1=========Các biến state
+
+// Lấy dữ liệu (Fetch) người dùng, tài xế từ Back-end.
   useEffect(() => {
     fetchUsers()
     fetchDrivers()
@@ -55,6 +58,8 @@ export default function App() {
       setMsg('Error loading drivers: ' + e.message)
     }
   }
+// Lấy dữ liệu (Fetch) người dùng, tài xế từ Back-end.
+
 
   // Users CRUD
   async function createUser(data) {

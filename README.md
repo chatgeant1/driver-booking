@@ -1,6 +1,7 @@
 1. npm install each folder
-2. docker-compose up --build to run
+2. "docker-compose up --build" to run
 3. cd to 3-web-app: npm run dev
+4. Check node version (use latest) if use node version manager
 
 
 Chạy script:
