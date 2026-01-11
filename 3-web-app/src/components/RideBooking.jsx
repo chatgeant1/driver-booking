@@ -11,37 +11,44 @@ export default function RideBooking({ userId, onRideCreated }) {
   const [loading, setLoading] = useState(false)
   const [rideData, setRideData] = useState(null)
 
-  async function handleBookRide(e) {
-    e.preventDefault()
-    if (!userId || !pickupLat || !pickupLon || !dropoffLat || !dropoffLon) {
-      setMsg('Vui lòng điền đủ thông tin')
-      return
-    }
-    try {
-      setLoading(true)
-      const r = await fetch(`${RIDE_URL}/rides`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          pickup_location: { lat: parseFloat(pickupLat), lon: parseFloat(pickupLon) },
-          dropoff_location: { lat: parseFloat(dropoffLat), lon: parseFloat(dropoffLon) }
-        })
-      })
-      const j = await r.json()
-      setRideData(j)
-      setMsg(`Ride created: ${j.ride_id} - Status: ${j.status}`)
-      if (onRideCreated) onRideCreated(j)
-      setPickupLat('')
-      setPickupLon('')
-      setDropoffLat('')
-      setDropoffLon('')
-    } catch (e) {
-      setMsg('Error: ' + e.message)
-    } finally {
-      setLoading(false)
-    }
+  // Trong file RideBooking.jsx
+async function handleBookRide(e) {
+  e.preventDefault();
+  
+  if (!userId || !pickupLat || !pickupLon || !dropoffLat || !dropoffLon) {
+    setMsg('Vui lòng điền đủ thông tin vị trí');
+    return;
   }
+
+  try {
+    setLoading(true);
+    const response = await fetch(`${RIDE_URL}/rides`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userId,
+        startLoc: { x: parseFloat(pickupLon), y: parseFloat(pickupLat) },
+        endLoc: { x: parseFloat(dropoffLon), y: parseFloat(dropoffLat) }
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setMsg("Đặt xe thành công! Đang chờ tài xế...");
+      setRideData(data);
+      
+      // Gọi callback để App.jsx cập nhật bản đồ và log
+      if (onRideCreated) onRideCreated(data); 
+    } else {
+      setMsg(data.error || "Có lỗi xảy ra");
+    }
+  } catch (err) {
+    setMsg("Lỗi kết nối Server");
+  } finally {
+    setLoading(false);
+  }
+}
 
   function getCurrentLocation(type) {
     if ('geolocation' in navigator) {

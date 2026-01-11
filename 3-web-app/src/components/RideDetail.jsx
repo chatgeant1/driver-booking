@@ -6,6 +6,28 @@ export default function RideDetail({ rideId, onBack }) {
   const [ride, setRide] = useState(null)
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
+  
+  const updateRideStatus = async (rideId, action) => {
+  // action có thể là: 'accept', 'start', 'finish'
+  const method = (action === 'accept') ? 'POST' : 'PUT';
+  const url = `http://localhost:3000/rides/${rideId}/${action}`; 
+
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: action === 'accept' ? JSON.stringify({ driverId: "ID_TAI_XE_MAU" }) : null
+    });
+    
+    if (response.ok) {
+      const updatedRide = await response.json();
+      addLog(`Trạng thái mới: ${updatedRide.status}`);
+      // Sau khi cập nhật trạng thái thành công, mới bắt đầu chạy animateCar
+    }
+  } catch (err) {
+    console.error("Lỗi cập nhật trạng thái:", err);
+  }
+};
 
   useEffect(() => {
     fetchRide()

@@ -16,20 +16,24 @@ export const create = async (req, res) => {
 // Nếu id không tồn tại → driver = null
 // 1.2 script 1
 export const update = async (req, res) => {
-  // Xử lý: không cho update BẤT KỲ field nào nếu client gửi lên
   const allowed = ['status', 'current_ride_id', 'location']
-
   const payload = {}
+
   for (const k of allowed) {
     if (req.body[k] !== undefined) payload[k] = req.body[k]
   }
 
-    const driver = await Driver.findByIdAndUpdate(
-        req.params.id, 
-        req.body, 
-        {new: true}
-    )
-    res.json(driver)
+  // Debug: In ra để xem payload có thực sự có location không
+  console.log('Driver Update Payload:', JSON.stringify(payload, null, 2));
+
+  const driver = await Driver.findByIdAndUpdate(
+      req.params.id, 
+      payload, // <--- Sửa thành payload
+      { new: true, runValidators: true } // Thêm runValidators để kiểm tra dữ liệu
+  )
+  
+  if (!driver) return res.status(404).json({ error: "Driver not found" });
+  res.json(driver)
 }
 
 

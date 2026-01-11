@@ -17,7 +17,7 @@ router.post("/:id/reject", ctl.driver_reject)
 router.put("/:id/start", ctl.start)
 router.put("/:id/finish", ctl.finish)
 
-
+router.post("/fare", ctl.getFare); 
 
 
 export default router

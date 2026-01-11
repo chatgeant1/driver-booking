@@ -11,12 +11,29 @@ import PaymentHistory from './components/PaymentHistory'
 import PaymentMethodForm from './components/PaymentMethodForm'
 import MapSimulator from './components/MapSimulator'
 import './styles.css'
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import L from "leaflet"
 
 const USER_URL = import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:3001'
 const DRIVER_URL = import.meta.env.VITE_DRIVER_SERVICE_URL || 'http://localhost:3002'
 
 export default function App() {
-  //=======1=========Các biến state
+  // App.jsx
+const onRideCreated = (ride) => {
+  // 1. Thêm vào bảng tin (Log)
+  addLog(`Hệ thống: Chuyến đi ${ride.ride_id} đã được tạo.`);
+  addLog(`Thông báo: Đang tìm tài xế xung quanh điểm đón (${ride.startLoc.y}, ${ride.startLoc.x})...`);
+
+  // 2. Cập nhật vị trí bản đồ để hiển thị Marker điểm đón/đến
+  setRideLocations({
+    pickup: [ride.startLoc.y, ride.startLoc.x],
+    dropoff: [ride.endLoc.y, ride.endLoc.x]
+  });
+
+  // 3. Lưu ID chuyến đi đang chọn
+  setSelectedRideId(ride.ride_id);
+};
+  
   const [users, setUsers] = useState([])
   const [drivers, setDrivers] = useState([])
 
@@ -27,11 +44,18 @@ export default function App() {
   const [selectedRideId, setSelectedRideId] = useState(null)
 
   const [rideHistory, setRideHistory] = useState([])
-
+  
   const currentUserId = 'user-demo-123' // adjust as needed
-//=======1=========Các biến state
 
-// Lấy dữ liệu (Fetch) người dùng, tài xế từ Back-end.
+  const [pos, setPos] = useState([10.762622, 106.660172]) // HCM
+
+  // Thêm vào cùng các useState khác trong App.jsx
+const [rideLocations, setRideLocations] = useState({
+  pickup: null,   // { lat: ..., lng: ... }
+  dropoff: null
+});
+    
+
   useEffect(() => {
     fetchUsers()
     fetchDrivers()
@@ -58,8 +82,6 @@ export default function App() {
       setMsg('Error loading drivers: ' + e.message)
     }
   }
-// Lấy dữ liệu (Fetch) người dùng, tài xế từ Back-end.
-
 
   // Users CRUD
   async function createUser(data) {
@@ -142,10 +164,23 @@ export default function App() {
       <section>
         <h2>💰 Tính Phí & Đặt Xe</h2>
         <FareCalculator />
-        <RideBooking userId={currentUserId} onRideCreated={(ride) => {
-          setRideHistory(prev => [ride, ...prev])
-          setSelectedRideId(ride.ride_id)
-        }} />
+        <RideBooking 
+  userId={"69393b9733261c2d0231aef7"} 
+  onRideCreated={(ride) => {
+    setRideHistory(prev => [ride, ...prev]);
+    setSelectedRideId(ride.ride_id);
+
+    // CẬP NHẬT TỌA ĐỘ LÊN BẢN ĐỒ
+    if (ride.startLoc && ride.endLoc) {
+      setRideLocations({
+        pickup: [ride.startLoc.y, ride.startLoc.x], // Leaflet dùng [lat, lng]
+        dropoff: [ride.endLoc.y, ride.endLoc.x]
+      });
+      // Di chuyển tâm bản đồ về điểm đón
+      setPos([ride.startLoc.y, ride.startLoc.x]);
+    }
+  }} 
+/>
       </section>
 
       <hr />
@@ -239,9 +274,37 @@ export default function App() {
       <hr />
 
       <section>
-        <h2>🗺️ Map Simulator (Fake)</h2>
-        <MapSimulator />
-      </section>
+  <h2>🗺️ Bản đồ chuyến đi</h2>
+  <div className="map-wrapper"> {/* Sử dụng class CSS bạn đã định nghĩa */}
+    <MapContainer
+      center={pos}
+      zoom={13}
+      style={{ height: "100%", width: "100%" }}
+    >
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      
+      {/* Marker mặc định (vị trí hiện tại hoặc trung tâm) */}
+      <Marker position={pos}>
+        <Popup>Vị trí của bạn</Popup>
+      </Marker>
+
+      {/* Hiển thị điểm Đón nếu có */}
+      {rideLocations.pickup && (
+        <Marker position={rideLocations.pickup}>
+          <Popup>📍 Điểm đón khách</Popup>
+        </Marker>
+      )}
+
+      {/* Hiển thị điểm Đến nếu có */}
+      {rideLocations.dropoff && (
+        <Marker position={rideLocations.dropoff}>
+          <Popup>🏁 Điểm đến</Popup>
+        </Marker>
+      )}
+      
+    </MapContainer>
+  </div>
+</section>
     </div>
   )
 }

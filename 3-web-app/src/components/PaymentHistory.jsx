@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-const PAYMENT_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:3004'
+const PAYMENT_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:3000/payments'
 
 export default function PaymentHistory({ userId }) {
   const [items, setItems] = useState([])

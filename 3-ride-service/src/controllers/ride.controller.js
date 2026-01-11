@@ -74,11 +74,13 @@ export const create = async (req, res) => {
     // khoảng cách Euclid trong mặt phẳng 2D
     const distance = Math.sqrt(dx*dx + dy*dy)
     
-    // BASE_FARE (Giá mở cửa): Thường là chi phí cố định cho x-km đầu tiên
-    const BASE_FARE = 10000
-    // PRICE_PER_UNIT (Giá mỗi km tiếp theo)
-    const PRICE_PER_UNIT = 4000
-    const price = BASE_FARE + distance * PRICE_PER_UNIT
+    // // BASE_FARE (Giá mở cửa): Thường là chi phí cố định cho x-km đầu tiên
+    // const BASE_FARE = 10000
+    // // PRICE_PER_UNIT (Giá mỗi km tiếp theo)
+    // const PRICE_PER_UNIT = 4000
+    // const price = BASE_FARE + distance * PRICE_PER_UNIT
+
+    const price = Math.round(distance * 5000 + 15000); 
 
     console.log(`Calculated Initial Price: ${price} (Distance: ${distance.toFixed(2)})`)
 
@@ -146,9 +148,13 @@ export const create = async (req, res) => {
     console.log('--- END RIDE REQUEST SUCCESS ---')
 
     return res.json({
-        rideId,
-        status: "REQUESTED",
-        assignedDriverId: assignedDriver.driverId
+        ride_id: rideId,
+        status: newRide.status,
+        assignedDriverId: assignedDriver.driverId,
+        startLoc: newRide.startLoc,
+        endLoc: newRide.endLoc,
+        price: newRide.price,
+        message: assignedDriver.driverId ? "Đã tìm thấy tài xế" : "Đang tìm tài xế..."
     })
 };
 //------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -412,3 +418,32 @@ export const finish = async (req, res) => {
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 
+export const getFare = async (req, res) => {
+    try {
+        const { pickup_location, dropoff_location, vehicle_type } = req.body;
+        
+        // Tính khoảng cách
+        const dx = dropoff_location.lon - pickup_location.lon;
+        const dy = dropoff_location.lat - pickup_location.lat;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Logic giá (Có thể điều chỉnh theo vehicle_type)
+        // const BASE_FARE = vehicle_type === 'car' ? 20000 : 10000;
+        // const PRICE_PER_UNIT = vehicle_type === 'car' ? 8000 : 4000;        
+        // const estimated_fare = BASE_FARE + (distance * PRICE_PER_UNIT);
+
+        // 3. Công thức giá (Nên lấy từ 1 nguồn duy nhất)
+        // Nếu muốn chia loại xe thì làm thế này:
+        const multiplier = vehicle_type === 'car' ? 8000 : 5000;
+        const base = vehicle_type === 'car' ? 20000 : 15000;
+        const estimated_fare = Math.round(distance * multiplier + base);
+
+        return res.json({
+            distance: distance.toFixed(2),
+            estimated_fare: Math.round(estimated_fare),
+            vehicle_type
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
