@@ -60,3 +60,55 @@ export default function PaymentForm({ userId, onResult }) {
     </form>
   )
 }
+
+// Thêm prop 'selectedRide' để lấy dữ liệu từ App.jsx
+export function PaymentFormV2({ userId, selectedRide, onResult }) {
+  const [msg, setMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Tự động lấy dữ liệu từ chuyến xe đang chọn
+  const rideId = selectedRide?.ride_id || '';
+  const amount = selectedRide?.price || 0;
+
+  async function handlePay(e) {
+    e.preventDefault()
+    if (!rideId) { setMsg('Không có chuyến xe nào cần thanh toán'); return }
+    
+    setLoading(true); setMsg('')
+    try {
+      const payload = { rideId }
+      const payment_url = import.meta.env.VITE_PAYMENT_SERVICE_URL || "http://localhost:3000/payments"
+
+      const r = await fetch(`${payment_url}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      })
+      
+      const j = await r.json()
+      setMsg(`Thanh toán thành công! Mã GD: ${j.transaction_id || 'OK'}`)
+      if (onResult) onResult(j)
+    } catch (err) {
+      setMsg('Lỗi thanh toán: ' + err.message)
+    } finally { setLoading(false) }
+  }
+
+  if (!selectedRide) return null; // Nếu chưa chọn ride thì không hiện form
+
+  return (
+    <div style={{border:'2px solid #28a745', padding:15, borderRadius:8, marginBottom:10}}>
+      <h4>💳 Xác nhận thanh toán</h4>
+      <p>Mã chuyến đi: <strong>{rideId}</strong></p>
+      <p>Số tiền cần trả: <span style={{color:'red', fontSize:'1.2em'}}>{amount.toLocaleString()} VNĐ</span></p>
+      
+      <button 
+        onClick={handlePay} 
+        disabled={loading}
+        style={{backgroundColor: '#28a745', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 5, cursor: 'pointer'}}
+      >
+        {loading ? 'Đang xử lý...' : 'XÁC NHẬN THANH TOÁN NGAY'}
+      </button>
+      <p className="msg">{msg}</p>
+    </div>
+  )
+}

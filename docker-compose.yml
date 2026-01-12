@@ -10,6 +10,8 @@ services:
       - payment-service	
     networks:
       - microservices-network
+    env_file:
+      - ./0-api-gateway/.env
 
   user-service:
     build: ./1-user-service
