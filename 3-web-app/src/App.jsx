@@ -264,7 +264,7 @@ const isPaid = paymentHistory.some(p => (p.rideId === selectedRideId || p.ride_i
 
       <hr />
 
-      {selectedRideId && currentRide && (
+      {selectedRideId && (
         <section>
           <RideDetail rideId={selectedRideId} onBack={() => setSelectedRideId(null)} />
           <RideCancel rideId={selectedRideId} userId={currentUserId} onCancel={() => setSelectedRideId(null)} />
