@@ -7,7 +7,9 @@ export default function PaymentHistory({ userId }) {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
-  useEffect(() => { if (userId) fetchHistory() }, [userId])
+  useEffect(() => { 
+    if (userId) fetchHistory() 
+  }, [userId])
 
   async function fetchHistory() {
     if (!userId) return

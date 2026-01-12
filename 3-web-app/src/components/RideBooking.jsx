@@ -7,6 +7,7 @@ export default function RideBooking({ userId, onRideCreated }) {
   const [pickupLon, setPickupLon] = useState('')
   const [dropoffLat, setDropoffLat] = useState('')
   const [dropoffLon, setDropoffLon] = useState('')
+
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const [rideData, setRideData] = useState(null)
@@ -31,7 +32,15 @@ async function handleBookRide(e) {
         endLoc: { x: parseFloat(dropoffLon), y: parseFloat(dropoffLat) }
       }),
     });
-
+    // response:
+    //     ride_id: rideId,
+    //     ride_status: newRide.status,
+    //     assignedDriverId: assignedDriver.driverId,
+    //     startLoc: newRide.startLoc,
+    //     endLoc: newRide.endLoc,
+    //     price: newRide.price,
+    //     message: assignedDriver.driverId ? "Đã tìm thấy tài xế" : "Đang tìm tài xế..."
+    
     const data = await response.json();
 
     if (response.ok) {
@@ -72,26 +81,29 @@ async function handleBookRide(e) {
       <form onSubmit={handleBookRide}>
         <div style={{ marginBottom: 8 }}>
           <label><strong>📍 Vị trí đón:</strong></label>
-          <input type="number" step="0.0001" placeholder="Latitude" value={pickupLat} onChange={e => setPickupLat(e.target.value)} />
-          <input type="number" step="0.0001" placeholder="Longitude" value={pickupLon} onChange={e => setPickupLon(e.target.value)} style={{ marginLeft: 6 }} />
+          <input type="number" step="0.000001" placeholder="Latitude" value={pickupLat} onChange={e => setPickupLat(e.target.value)} />
+          <input type="number" step="0.000001" placeholder="Longitude" value={pickupLon} onChange={e => setPickupLon(e.target.value)} style={{ marginLeft: 6 }} />
           <button type="button" onClick={() => getCurrentLocation('pickup')} style={{ marginLeft: 6 }}>📍</button>
         </div>
+
         <div style={{ marginBottom: 8 }}>
           <label><strong>📍 Vị trí đến:</strong></label>
-          <input type="number" step="0.0001" placeholder="Latitude" value={dropoffLat} onChange={e => setDropoffLat(e.target.value)} />
-          <input type="number" step="0.0001" placeholder="Longitude" value={dropoffLon} onChange={e => setDropoffLon(e.target.value)} style={{ marginLeft: 6 }} />
+          <input type="number" step="0.000001" placeholder="Latitude" value={dropoffLat} onChange={e => setDropoffLat(e.target.value)} />
+          <input type="number" step="0.000001" placeholder="Longitude" value={dropoffLon} onChange={e => setDropoffLon(e.target.value)} style={{ marginLeft: 6 }} />
           <button type="button" onClick={() => getCurrentLocation('dropoff')} style={{ marginLeft: 6 }}>📍</button>
         </div>
+
         <button type="submit" disabled={loading} style={{ padding: '8px 16px', fontSize: 14, fontWeight: 'bold' }}>
           {loading ? 'Booking...' : 'Book Ride'}
         </button>
+        
       </form>
       <p className="msg">{msg}</p>
       {rideData && (
         <div style={{ marginTop: 8, padding: 8, background: '#f0f8ff', borderRadius: 4 }}>
           <p><strong>Ride ID:</strong> {rideData.ride_id}</p>
-          <p><strong>Status:</strong> {rideData.status}</p>
-          <p><strong>Estimated Fare:</strong> ${rideData.estimated_fare}</p>
+          <p><strong>Status:</strong> {rideData.ride_status}</p>
+          <p><strong>Estimated Fare:</strong> ${rideData.price}</p>
         </div>
       )}
     </div>

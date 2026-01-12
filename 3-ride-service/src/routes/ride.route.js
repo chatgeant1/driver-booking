@@ -19,5 +19,8 @@ router.put("/:id/finish", ctl.finish)
 
 router.post("/fare", ctl.getFare); 
 
+//  FE: RideStatusUpdate
+// PUT /rides/:id/status
+router.put('/:id/status', ctl.updateRideFE)
 
 export default router

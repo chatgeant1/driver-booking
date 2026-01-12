@@ -149,7 +149,7 @@ export const create = async (req, res) => {
 
     return res.json({
         ride_id: rideId,
-        status: newRide.status,
+        ride_status: newRide.status,
         assignedDriverId: assignedDriver.driverId,
         startLoc: newRide.startLoc,
         endLoc: newRide.endLoc,
@@ -410,7 +410,7 @@ export const finish = async (req, res) => {
     console.log('--- END RIDE FINISH FLOW ---')
     return res.json({
       rideId,
-      status: "COMPLETED",
+      ride_status: "COMPLETED",
       message: "Ride finished, waiting for payment",
       driver_current_location: `(${ride.endLoc.x} ; ${ride.endLoc.y})`
     })
@@ -447,3 +447,66 @@ export const getFare = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// PUT /rides/:id/status
+export const updateRideFE = async (req, res) => {
+  try {
+    const { rideId, action } = req.body;
+    const ride = await Ride.findById(rideId);
+    if (!ride) return res.status(404).json({ error: "Không tìm thấy chuyến xe" });
+
+    const ride_url = config.services.ride;
+    const driver_url = config.services.driver;
+    
+    // kết quả trả về từ các service
+    let finalData = {}; 
+
+    switch(action) {
+      case 'ACCEPT':
+        // Lấy đại 1 tài xế từ mảng candidate hoặc ID có sẵn để giả lập
+        const driverId = ride.candidate_drivers[0].driverId || "65f...giả_lập_id"; 
+        const resAccept = await axios.post(`${ride_url}/${rideId}/accept`, { driverId });
+        finalData = resAccept.data;
+        break;
+
+      case 'START':
+        const resStart = await axios.put(`${ride_url}/${rideId}/start`);
+        finalData = resStart.data;
+        break;
+
+      case 'COMPLETE':
+        const resFinish = await axios.put(`${ride_url}/${rideId}/finish`);
+        finalData = resFinish.data;
+        break;
+    }
+    
+
+    // --- BƯỚC CHUẨN HÓA (Vì LOẠN TÊN FIELD) ---
+    const normalizedRide = {
+      // Ép tất cả về ride_id (dùng cho map/key)
+      // Cung cấp cả 2 phiên bản ID để chỗ nào cũng dùng được
+        _id: finalData.rideId || finalData.ride_id || rideId, 
+        ride_id: finalData.rideId || finalData.ride_id || rideId,
+      // Ép tất cả về status (để setMsg và đổi màu Detail)
+      status: finalData.ride_status || finalData.status, 
+      // Giữ lại các thông tin khác nếu cần
+      driver_status: finalData.driver_status,
+      location: finalData.driver_current_location,
+      message: finalData.message,
+      price: ride.price || ride.estimated_fare || 0,
+      startLoc: ride.startLoc,
+      endLoc: ride.endLoc,
+      userId: ride.userId,
+      driverId: finalData.driverId || ride.driverId
+
+    };
+
+    // TRẢ VỀ finalData (vì trong finalData đã có status mới nhất từ Service Ride rồi)
+    console.log("Dữ liệu đã chuẩn hóa gửi về FE:", normalizedRide);
+    res.json(normalizedRide); 
+
+  } catch (error) {
+    console.error("Simulation Error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}

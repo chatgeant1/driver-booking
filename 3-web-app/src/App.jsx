@@ -11,14 +11,44 @@ import PaymentHistory from './components/PaymentHistory'
 import PaymentMethodForm from './components/PaymentMethodForm'
 import MapSimulator from './components/MapSimulator'
 import './styles.css'
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet"
 import L from "leaflet"
+import {PaymentFormV2} from './components/PaymentForm'
 
 const USER_URL = import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:3001'
 const DRIVER_URL = import.meta.env.VITE_DRIVER_SERVICE_URL || 'http://localhost:3002'
+const RIDE_URL = import.meta.env.VITE_RIDE_SERVICE_URL || 'http://localhost:3003/rides'
+const PAYMENT_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL || 'http://localhost:3004/payments'
 
-export default function App() {
-  // App.jsx
+
+export default function App() { 
+  const [users, setUsers] = useState([])
+  const [drivers, setDrivers] = useState([])
+
+  const [msg, setMsg] = useState('')
+
+  const [editingUser, setEditingUser] = useState(null)
+  const [editingDriver, setEditingDriver] = useState(null)
+  const [selectedRideId, setSelectedRideId] = useState(null)
+
+  const [rideHistory, setRideHistory] = useState([])
+  const [paymentHistory, setPaymentHistory] = useState([])
+  
+  const [currentRide, setCurrentRide] = useState({})
+  const currentUserId = users[0] || '69393b9733261c2d0231aef7' // adjust as needed
+
+  // 10.762622, 106.660172 - HCM
+  // 10.848171606710341, 106.78664690351987 - PTIT
+  // 10.789662937835404, 106.70060819055709 - Open Uni.
+  const [pos, setPos] = useState([10.848171606710341, 106.78664690351987]) // HCM
+
+  // Thêm vào cùng các useState khác trong App.jsx
+const [rideLocations, setRideLocations] = useState({
+  pickup: null,   // { lat: ..., lng: ... }
+  dropoff: null
+});
+    
+ // App.jsx
 const onRideCreated = (ride) => {
   // 1. Thêm vào bảng tin (Log)
   addLog(`Hệ thống: Chuyến đi ${ride.ride_id} đã được tạo.`);
@@ -33,34 +63,16 @@ const onRideCreated = (ride) => {
   // 3. Lưu ID chuyến đi đang chọn
   setSelectedRideId(ride.ride_id);
 };
-  
-  const [users, setUsers] = useState([])
-  const [drivers, setDrivers] = useState([])
 
-  const [msg, setMsg] = useState('')
-
-  const [editingUser, setEditingUser] = useState(null)
-  const [editingDriver, setEditingDriver] = useState(null)
-  const [selectedRideId, setSelectedRideId] = useState(null)
-
-  const [rideHistory, setRideHistory] = useState([])
-  
-  const currentUserId = 'user-demo-123' // adjust as needed
-
-  const [pos, setPos] = useState([10.762622, 106.660172]) // HCM
-
-  // Thêm vào cùng các useState khác trong App.jsx
-const [rideLocations, setRideLocations] = useState({
-  pickup: null,   // { lat: ..., lng: ... }
-  dropoff: null
-});
-    
 
   useEffect(() => {
-    fetchUsers()
-    fetchDrivers()
+    fetchUsers();
+    fetchDrivers();
+    fetchRideHistory();
+    fetchPaymentHistory();
   }, [])
 
+// 1. Hàm lấy danh sách người dùng  
   async function fetchUsers() {
     try {
       const r = await fetch(`${USER_URL}/users`)
@@ -72,6 +84,7 @@ const [rideLocations, setRideLocations] = useState({
     }
   }
 
+// 2. Hàm lấy danh sách tài xế  
   async function fetchDrivers() {
     try {
       const r = await fetch(`${DRIVER_URL}/drivers`)
@@ -82,6 +95,41 @@ const [rideLocations, setRideLocations] = useState({
       setMsg('Error loading drivers: ' + e.message)
     }
   }
+
+// 3. Hàm lấy lịch sử chuyến đi
+async function fetchRideHistory() {
+  try {
+    // Lưu ý: Trong thực tế bạn nên truyền userId vào query để lọc
+    // ví dụ: ${RIDE_URL}?userId=${currentUserId}
+    const response = await fetch(`${RIDE_URL}`);
+    const data = await response.json();
+    
+    // Nếu Backend trả về mảng, ta cập nhật state
+    if (Array.isArray(data)) {
+      setRideHistory(data);
+      setMsg('Ride history updated');
+    }
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử:", error);
+    setMsg('Failed to load ride history');
+  }
+}
+
+// 4. Hàm lấy lịch sử THANH TOÁN
+async function fetchPaymentHistory() {
+  try {
+    const response = await fetch(`${PAYMENT_URL}`);
+    const data = await response.json();
+    
+    if (Array.isArray(data)) {
+      setPaymentHistory(data);
+      setMsg('Payment history updated');
+    }
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử:", error);
+    setMsg('Failed to load payment history');
+  }
+}
 
   // Users CRUD
   async function createUser(data) {
@@ -157,6 +205,33 @@ const [rideLocations, setRideLocations] = useState({
     } catch (e) { setMsg('Delete driver error: ' + e.message) }
   }
 
+  async function getRide(rideId){
+    try{
+      const r = await fetch(`${RIDE_URL}/${rideId}`)
+      const j = await r.json()
+      setCurrentRide(j || {})
+      setMsg('Ride loaded')
+    }catch (e) {setMsg(e.message)}
+  }
+
+// ON_STATUS_UPDATE  
+const handleStatusRefresh = (updatedRide) => {
+  // 1. Cập nhật currentRide bằng cách gộp (merge) để không mất trường 'price'
+  setCurrentRide(prev => ({
+    ...prev,          // Giữ lại tất cả dữ liệu cũ (bao gồm price, startLoc...)
+    ...updatedRide    // Ghi đè các dữ liệu mới (status, driver_status...)
+  }));
+
+  // 2. Cập nhật trong danh sách rideHistory tương tự
+  setRideHistory(prev => prev.map(r => 
+    (r._id === updatedRide._id || r.ride_id === updatedRide.ride_id) 
+    ? { ...r, ...updatedRide } 
+    : r
+  ));
+};
+
+
+
   return (
     <div className="container">
       <h1>Driver Booking — Full Platform</h1>
@@ -165,22 +240,22 @@ const [rideLocations, setRideLocations] = useState({
         <h2>💰 Tính Phí & Đặt Xe</h2>
         <FareCalculator />
         <RideBooking 
-  userId={"69393b9733261c2d0231aef7"} 
-  onRideCreated={(ride) => {
-    setRideHistory(prev => [ride, ...prev]);
-    setSelectedRideId(ride.ride_id);
+            userId={currentUserId} 
+            onRideCreated={(ride) => {
+                getRide(ride.ride_id);
+                setSelectedRideId(ride.ride_id);
 
-    // CẬP NHẬT TỌA ĐỘ LÊN BẢN ĐỒ
-    if (ride.startLoc && ride.endLoc) {
-      setRideLocations({
-        pickup: [ride.startLoc.y, ride.startLoc.x], // Leaflet dùng [lat, lng]
-        dropoff: [ride.endLoc.y, ride.endLoc.x]
-      });
-      // Di chuyển tâm bản đồ về điểm đón
-      setPos([ride.startLoc.y, ride.startLoc.x]);
-    }
-  }} 
-/>
+                // CẬP NHẬT TỌA ĐỘ LÊN BẢN ĐỒ
+                if (ride.startLoc && ride.endLoc) {
+                  setRideLocations({
+                    pickup: [ride.startLoc.y, ride.startLoc.x], // Leaflet dùng [lat, lng]
+                    dropoff: [ride.endLoc.y, ride.endLoc.x]
+                  });
+                  // Di chuyển tâm bản đồ về điểm đón
+                  setPos([ride.startLoc.y, ride.startLoc.x]);
+                }
+            }} 
+          />
       </section>
 
       <hr />
@@ -189,24 +264,115 @@ const [rideLocations, setRideLocations] = useState({
         <section>
           <RideDetail rideId={selectedRideId} onBack={() => setSelectedRideId(null)} />
           <RideCancel rideId={selectedRideId} userId={currentUserId} onCancel={() => setSelectedRideId(null)} />
-          <RideStatusUpdate rideId={selectedRideId} />
+          
+          {/* Tìm trực tiếp object trong mảng history dựa trên ID đang chọn */}
+          <RideStatusUpdate 
+            ride={rideHistory.find(r => (r._id === selectedRideId || r.ride_id === selectedRideId))} 
+            onStatusUpdate={handleStatusRefresh}
+          />
         </section>
       )}
 
       <hr />
 
-      <section>
-        <h2>📋 Lịch Sử Chuyến Đi</h2>
-        {rideHistory.length === 0 ? <p>No rides</p> : (
-          <ul>
-            {rideHistory.map(ride => (
-              <li key={ride.ride_id} style={{ marginBottom: 8, cursor: 'pointer', padding: 8, background: '#f5f5f5' }} onClick={() => setSelectedRideId(ride.ride_id)}>
-                <strong>#{ride.ride_id}</strong> - {ride.status} - ${ride.estimated_fare}
-              </li>
-            ))}
-          </ul>
+
+<section>
+        <h2>💳 Payments</h2>
+        <PaymentFormV2 
+            userId={currentUserId} 
+            selectedRide={currentRide} 
+            onResult={(paymentData) => {
+                console.log("Trả tiền xong!", paymentData);
+                // Sau khi trả tiền, có thể load lại lịch sử thanh toán hoặc thông báo xong xuôi
+                fetchPaymentHistory(); 
+            }}
+        />    
+</section>
+
+{/* BẢN ĐỒ BẢN ĐỒ BẢN ĐỒ  */}
+<section>
+    <h2>🗺️ Bản đồ chuyến đi</h2>
+    <div className="map-wrapper"> {/* Sử dụng class CSS bạn đã định nghĩa */}
+      <MapContainer
+        center={pos}
+        zoom={13}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        
+        {/* Marker mặc định (vị trí hiện tại hoặc trung tâm) */}
+        <Marker position={pos}>
+          <Popup>Vị trí của bạn</Popup>
+        </Marker>
+
+        {/* Hiển thị điểm Đón nếu có */}
+        {rideLocations.pickup && (
+          <Marker position={rideLocations.pickup}>
+            <Popup>📍 Điểm đón khách</Popup>
+          </Marker>
         )}
-      </section>
+
+        {/* Hiển thị điểm Đến nếu có */}
+        {rideLocations.dropoff && (
+          <Marker position={rideLocations.dropoff}>
+            <Popup>🏁 Điểm đến</Popup>
+          </Marker>
+        )}
+
+        {/* Vẽ đường thẳng nối 2 điểm nếu có đủ pickup và dropoff */}
+        {rideLocations.pickup && rideLocations.dropoff && (
+          <Polyline 
+            positions={[rideLocations.pickup, rideLocations.dropoff]} 
+            color="blue" 
+            dashArray="5, 10" // Tạo hiệu ứng đường đứt đoạn cho đẹp
+          />
+        )}
+        
+      </MapContainer>
+    </div>
+</section>
+{/* BẢN ĐỒ BẢN ĐỒ BẢN ĐỒ  */}
+
+
+{/* LỊCH SỬ CHUYẾN ĐI */}
+<section className="history-section">
+  <h2>📋 Lịch Sử Chuyến Đi</h2>
+  {rideHistory.length === 0 ? (
+    <div className="no-data">
+      <p>Chưa có chuyến đi nào được ghi nhận.</p>
+      <button onClick={fetchRideHistory}>Thử tải lại</button>
+    </div>
+  ) : (
+    <div className="ride-list-container">
+      <ul className="ride-list">
+        {rideHistory.map(ride => (
+          <li 
+            key={ride._id} 
+            className={`ride-item ${selectedRideId === ride._id ? 'active' : ''}`}
+            onClick={() => {
+              setSelectedRideId(ride._id);
+              setCurrentRide(ride);
+            }}
+          >
+            <div className="ride-info">
+              <span className="ride-id">#{ride._id}</span>
+              <span className={`status-badge ${ride.status?.toLowerCase() || ''}`}>
+                ---{ride.status || 'N/A'}---
+              </span>
+            </div>
+            <div className="ride-meta">
+              <span>Số tiền: {Math.round(ride.price || 0).toLocaleString()} VNĐ</span> <br />
+              <span>Vị trí: START: ({ride.startLoc?.x}, {ride.startLoc?.y}), END: ({ride.endLoc?.x}, {ride.endLoc?.y})</span>
+            </div>
+            <hr />
+          </li>
+          
+        ))}
+      </ul>
+    </div>
+  )}
+</section>
+{/* LỊCH SỬ CHUYẾN ĐI */}
 
       <hr />
 
@@ -250,7 +416,7 @@ const [rideLocations, setRideLocations] = useState({
             <ul>
               {drivers.map(d => (
                 <li key={d._id} style={{marginBottom:10}}>
-                  <strong>{d.name}</strong> — {d.vehicleType} ({d.vehiclePlate}) — {d.status}
+                  <strong>{d.name}</strong> — {d.vehicleType} ({d.vehiclePlate}) — {d.status} — Vị trí: ({d.location.x}; {d.location.y})
                   <div>
                     <button onClick={() => setEditingDriver(d)}>Sửa</button>
                     <button onClick={() => deleteDriver(d._id)}>Xóa</button>
@@ -264,47 +430,56 @@ const [rideLocations, setRideLocations] = useState({
 
       <hr />
 
-      <section>
-        <h2>💳 Payments</h2>
-        <PaymentMethodForm userId={currentUserId} onAdded={() => { /* optionally refresh methods */ }} />
-        <PaymentForm userId={currentUserId} onResult={(tx) => { /* optionally add to history */ }} />
-        <PaymentHistory userId={currentUserId} />
+      <section>           
+        {/* <PaymentHistory userId={currentUserId} /> */}
+        <div className="history-section">
+          <h2>Lịch Sử Thanh Toán</h2>
+          {paymentHistory.length === 0 ? (
+            <div className="no-data">
+              <p>Chưa có dữ liệu nào được ghi nhận.</p>
+              <button onClick={fetchPaymentHistory}>Thử tải lại</button>
+            </div>
+          ) : (
+            <div className="payment-list-container">
+              <ul className="payment-list">
+                {
+                  paymentHistory.map(payment => (
+                    <li 
+                      key={payment._id} 
+                      className={`payment-item ${selectedRideId === payment.rideId ? 'active' : ''}`}
+                      onClick={() => setSelectedRideId(payment.rideId)}
+                      style={{ borderBottom: '1px solid #eee', padding: '10px 0' }}
+                    >
+                      <div className="payment-info" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span className="payment-id">💳 GD: #{payment._id.slice(-6)}</span>
+                        <span className={`status-badge ${payment.status.toLowerCase()}`}>
+                          {payment.status === 'PAID' ? '✅ Đã thanh toán' : '⏳ Chờ xử lý'}
+                        </span>
+                      </div>
+
+                      <div className="payment-meta" style={{ fontSize: '1em', color: '#666', marginTop: '5px' }}>
+                        <div>💰 Số tiền: <strong>{Math.round(payment.amount || 0).toLocaleString()} VNĐ</strong></div>
+                        <div>🔌 Phương thức: {payment.method === 'wallet' ? 'Ví điện tử' : 'Tiền mặt'}</div>
+                        <div>🆔 Mã chuyến: {payment.rideId}</div>
+                        {/* Hiển thị thời gian từ timestamps */}
+                        <div style={{ fontSize: '1em', color: '#999' }}>
+                          ⏰ {new Date(payment.createdAt).toLocaleString('vi-VN')}
+                        </div>
+                      </div>
+                    </li>
+                  ))
+                }
+              </ul>
+            </div>
+          )}
+        </div>
+        {/* LỊCH SỬ THANH TOÁN */}
+
       </section>
 
       <hr />
 
-      <section>
-  <h2>🗺️ Bản đồ chuyến đi</h2>
-  <div className="map-wrapper"> {/* Sử dụng class CSS bạn đã định nghĩa */}
-    <MapContainer
-      center={pos}
-      zoom={13}
-      style={{ height: "100%", width: "100%" }}
-    >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      
-      {/* Marker mặc định (vị trí hiện tại hoặc trung tâm) */}
-      <Marker position={pos}>
-        <Popup>Vị trí của bạn</Popup>
-      </Marker>
 
-      {/* Hiển thị điểm Đón nếu có */}
-      {rideLocations.pickup && (
-        <Marker position={rideLocations.pickup}>
-          <Popup>📍 Điểm đón khách</Popup>
-        </Marker>
-      )}
-
-      {/* Hiển thị điểm Đến nếu có */}
-      {rideLocations.dropoff && (
-        <Marker position={rideLocations.dropoff}>
-          <Popup>🏁 Điểm đến</Popup>
-        </Marker>
-      )}
-      
-    </MapContainer>
-  </div>
-</section>
-    </div>
+</div>
   )
 }

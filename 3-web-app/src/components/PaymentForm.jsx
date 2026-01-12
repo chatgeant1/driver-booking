@@ -66,49 +66,70 @@ export function PaymentFormV2({ userId, selectedRide, onResult }) {
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Tự động lấy dữ liệu từ chuyến xe đang chọn
-  const rideId = selectedRide?.ride_id || '';
-  const amount = selectedRide?.price || 0;
+  // Tự động trích xuất dữ liệu từ Object ride truyền vào
+  const rideId = selectedRide?._id || selectedRide?.ride_id;
+  const amount = selectedRide?.price || selectedRide?.estimated_fare || 0;
 
-  async function handlePay(e) {
-    e.preventDefault()
-    if (!rideId) { setMsg('Không có chuyến xe nào cần thanh toán'); return }
+  async function handlePay() {
+    if (!rideId) return;
     
     setLoading(true); setMsg('')
     try {
+      // Đúng theo script của bạn: Chỉ cần gửi rideId lên
       const payload = { rideId }
-      const payment_url = import.meta.env.VITE_PAYMENT_SERVICE_URL || "http://localhost:3000/payments"
+      const PAYMENT_URL = import.meta.env.VITE_PAYMENT_SERVICE_URL || "http://localhost:3000"
 
-      const r = await fetch(`${payment_url}`, {
+      const r = await fetch(`${PAYMENT_URL}/payments`, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       })
       
       const j = await r.json()
-      setMsg(`Thanh toán thành công! Mã GD: ${j.transaction_id || 'OK'}`)
-      if (onResult) onResult(j)
+      
+      if (r.ok) {
+        setMsg(`✅ Thanh toán thành công! Mã GD: ${j.transaction_id || 'SUCCESS'}`)
+        if (onResult) onResult(j) // Gọi hàm để App.jsx biết đã trả tiền xong
+      } else {
+        setMsg('❌ Lỗi: ' + (j.error || 'Giao dịch thất bại'))
+      }
     } catch (err) {
-      setMsg('Lỗi thanh toán: ' + err.message)
+      setMsg('❌ Lỗi kết nối Service Thanh toán')
     } finally { setLoading(false) }
   }
 
-  if (!selectedRide) return null; // Nếu chưa chọn ride thì không hiện form
+  // CHỈ HIỆN KHI CHUYẾN XE ĐÃ HOÀN THÀNH
+  if (selectedRide?.status !== 'COMPLETED') return null;
 
   return (
-    <div style={{border:'2px solid #28a745', padding:15, borderRadius:8, marginBottom:10}}>
-      <h4>💳 Xác nhận thanh toán</h4>
-      <p>Mã chuyến đi: <strong>{rideId}</strong></p>
-      <p>Số tiền cần trả: <span style={{color:'red', fontSize:'1.2em'}}>{amount.toLocaleString()} VNĐ</span></p>
+    <div style={{
+      border: '2px solid #28a745', 
+      padding: '20px', 
+      borderRadius: '10px', 
+      background: '#f8fff9',
+      marginTop: '20px'
+    }}>
+      <h3 style={{color: '#28a745', marginTop: 0}}>💰 Bước cuối: Thanh toán</h3>
+      <p>Mã chuyến đi: <code>{rideId}</code></p>
+      <p>Số tiền: <strong style={{fontSize: '1.5em', color: '#d9534f'}}>{amount.toLocaleString()} VNĐ</strong></p>
       
       <button 
         onClick={handlePay} 
         disabled={loading}
-        style={{backgroundColor: '#28a745', color: 'white', padding: '10px 20px', border: 'none', borderRadius: 5, cursor: 'pointer'}}
+        style={{
+          backgroundColor: '#28a745', 
+          color: 'white', 
+          padding: '12px 25px', 
+          border: 'none', 
+          borderRadius: '5px', 
+          fontWeight: 'bold',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          width: '100%'
+        }}
       >
-        {loading ? 'Đang xử lý...' : 'XÁC NHẬN THANH TOÁN NGAY'}
+        {loading ? '🔄 Đang xử lý giao dịch...' : 'XÁC NHẬN THANH TOÁN'}
       </button>
-      <p className="msg">{msg}</p>
+      {msg && <p style={{marginTop: 10, fontWeight: '500'}}>{msg}</p>}
     </div>
   )
 }

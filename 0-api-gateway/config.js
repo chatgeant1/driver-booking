@@ -3,6 +3,12 @@ dotenv.config();
 
 // Cho api-gateway
 
+const userUrl = process.env.USER_SERVICE_URL || process.env.USER_DOCKER_URL;
+
+if (!userUrl) {
+  throw new Error("QUÊN GẮN ENV FILE trên docker-compose.yml.");
+}
+
 const config = {
   port: process.env.PORT || 3000,
   mongoUri: process.env.MONGO_URI,
