@@ -3,6 +3,11 @@ import React, { useState } from 'react'
 const RIDE_URL = import.meta.env.VITE_RIDE_SERVICE_URL || 'http://localhost:3003'
 
 export default function RideStatusUpdate({ ride, onStatusUpdate }) {
+
+  if (!ride) {
+    return <div style={{ padding: 10 }}>⌛ Đang tải dữ liệu chuyến xe...</div>;
+  }
+
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
