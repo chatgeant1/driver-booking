@@ -62,7 +62,7 @@ export default function PaymentForm({ userId, onResult }) {
 }
 
 // Thêm prop 'selectedRide' để lấy dữ liệu từ App.jsx
-export function PaymentFormV2({ userId, selectedRide, onResult }) {
+export function PaymentFormV2({ userId, selectedRide, onResult, isPaid }) {
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -98,8 +98,9 @@ export function PaymentFormV2({ userId, selectedRide, onResult }) {
     } finally { setLoading(false) }
   }
 
-  // CHỈ HIỆN KHI CHUYẾN XE ĐÃ HOÀN THÀNH
-  if (selectedRide?.status !== 'COMPLETED') return null;
+  // SỬA LẠI ĐIỀU KIỆN HIỂN THỊ
+  // Chỉ hiện nếu: Đã hoàn thành (COMPLETED) VÀ Chưa thanh toán (isPaid === false)
+  if (selectedRide?.status !== 'COMPLETED' || isPaid) return null;
 
   return (
     <div style={{

@@ -231,6 +231,10 @@ const handleStatusRefresh = (updatedRide) => {
 };
 
 
+// Tìm xem trong lịch sử thanh toán đã có bản ghi nào của ride này mà status là 'PAID' chưa
+const isPaid = paymentHistory.some(p => (p.rideId === selectedRideId || p.ride_id === selectedRideId) && p.status === 'PAID');
+
+
 
   return (
     <div className="container">
@@ -280,7 +284,8 @@ const handleStatusRefresh = (updatedRide) => {
         <h2>💳 Payments</h2>
         <PaymentFormV2 
             userId={currentUserId} 
-            selectedRide={currentRide} 
+            selectedRide={currentRide}
+            isPaid={isPaid} 
             onResult={(paymentData) => {
                 console.log("Trả tiền xong!", paymentData);
                 // Sau khi trả tiền, có thể load lại lịch sử thanh toán hoặc thông báo xong xuôi
